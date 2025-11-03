@@ -1,0 +1,294 @@
+---
+title: "R_Project_6607_f23"
+author: "Yagghaseni Saha Roy, 202286106"
+date: "Date: `r format(Sys.time(), '%Y-%m-%d')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+
+#  Dataset Description
+
+The dataset "boneExam.csv" originates from the Third National Health and Nutrition Examination Survey (NHANES III) conducted between 1988 and 1994 in the United States. NHANES III is a comprehensive survey by the National Center for Health Statistics (NCHS) aimed at assessing the health and nutritional status of a representative U.S. population. Comprising 31,311 observations across 35 variables, the dataset provides a detailed snapshot of individuals' demographics, anthropometric measurements, and health-related information. Variables such as SEQN (participant identifier), DMARETHN (ethnicity), and HSSEX (gender) are included. This dataset serves as a crucial resource for researchers and policymakers, offering insights into health trends, risk factors, and relationships between various demographic factors and health outcomes.
+
+
+#  Variable Types and Statistical Measures
+
+1. Categorical Variables:
+Examples: DMARETHN (Ethnicity), DMARACER (Race), DMAETHNR (Ethnicity and race recode), HSSEX (Gender), PEPPREG (Pregnancy status)
+Statistical Measures:
+Frequency tables and bar charts to show distribution.
+
+2. Numerical Variables:
+Examples: BMPWT (Weight), BMPBMI (Body Mass Index), BMPHT (Height), BMPARMC (Arm circumference)
+Statistical Measures:
+Histograms and boxplots to visualize the distribution.
+
+3. Binary Variables:
+Examples: DRPNKCAL (Indicator for daily calorie intake)
+Statistical Measures:
+Proportions or percentages to describe the distribution.
+
+4. Continuous Variables:
+Examples: BMPWHR (Waist-Hip Ratio), BMPTHICI (Hip circumference), BDPFNBMD (Bone density of the femoral neck)
+Statistical Measures:
+Scatter plots for relationships with other variables.
+
+# Claim
+
+In this project, I will explore if there are any correlation between BMI and bone health, age and bone health. And if ethnicty and gender make any difference in bone density.
+
+```{r}
+bone_exam <- read.csv("boneExam.csv")
+
+print("Column Information:")
+str(bone_exam)
+
+```
+## Summary of dataset
+
+
+```{r}
+library(dplyr)
+bone_data <- read.csv("boneExam.csv", na.strings = c("NA", "NaN"))
+missing_values <- sapply(bone_data, function(x) sum(is.na(x)))
+print(missing_values[missing_values > 0])
+
+summary(bone_data)
+
+```
+
+
+## Data Cleaning
+
+Data cleaning is a crucial step in the data preparation process that involves identifying and correcting errors or inconsistencies in a dataset. This process ensures that the data is accurate, complete, and ready for analysis. Common data cleaning tasks include handling missing values, removing duplicates, correcting data types, and eliminating irrelevant or redundant information. The goal is to enhance the quality of the dataset, mitigate potential biases or inaccuracies, and create a more reliable foundation for meaningful analysis and interpretation.
+
+```{r}
+
+library(tidyverse)
+library(dplyr)
+
+df1 <- read.csv("boneExam.csv", na.strings = c("NA", "N/A", ""))
+
+columns_to_remove <- c("DRPNKCAL", "MYPB1", "MYPB2", "MYPB3", "MYPB4", "MYPB5",
+                        "MYPB6R", "MYPB7R", "MYPB8", "MYPB9S", "MYPB10", "MYPB11",
+                        "MYPB12", "MYPB13S", "MYPB14", "MYPC17")
+
+df <- select(df1, -one_of(columns_to_remove))
+
+write.csv(df, "boneExam_removed.csv", row.names = FALSE)
+
+str(df)
+
+df2 <- read.csv("boneExam_removed.csv", na.strings = c("NA", "N/A", ""))
+
+df_cleaned2 <- df2 %>% na.omit()
+
+write.csv(df_cleaned2, "boneExam_cleaned2.csv", row.names = FALSE)
+
+
+```
+## Summary of cleaned dataset
+
+```{r}
+library(dplyr)
+
+cleaned_data <- read.csv("boneExam_cleaned2.csv", na.strings = c("NA", "NaN"))
+
+summary(cleaned_data)
+```
+## Graphical Display
+
+```{r}
+library(tidyverse)
+library(dplyr)
+
+data <- read.csv("boneExam_cleaned2.csv", na.strings = c("NA", "NaN"))
+
+# Histogram of Age
+hist(data$HSAGEIR, main = "Distribution of Age", xlab = "Age")
+
+# Boxplot of BMI
+boxplot(data$BMPBMI, main = "Boxplot of BMI", ylab = "BMI")
+
+```
+
+
+## Data Analysis 
+
+# Relationship between BMI and bone health
+
+```{r}
+library(tidyverse)
+library(dplyr)
+
+cleaned_data <- read.csv("boneExam_cleaned2.csv", na.strings = c("NA", "NaN"))
+
+
+subset_data <- cleaned_data %>% 
+  select(BMPWT, BMPBMI, BDPFNBMD)
+subset_data <- na.omit(subset_data)
+
+
+# Scatter plot of BMI vs. Bone Density with regression line
+ggplot(subset_data, aes(x = BMPBMI, y = BDPFNBMD)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  labs(title = "Scatter Plot of BMI vs. Femoral Neck Bone Density",
+       x = "BMI",
+       y = "Femoral Neck Bone Density")
+
+
+
+# Correlation 
+correlation <- cor(subset_data$BMPBMI, subset_data$BDPFNBMD)
+model <- lm(BDPFNBMD ~ BMPBMI, data = subset_data)
+cat("Correlation between BMI and Femoral Neck Bone Density:", correlation, "\n\n")
+summary(model)
+
+
+```
+Linear Regression Analysis:
+
+The linear regression model is given by:
+Femoral Neck Bone Density=9377.79+3.86×BMPBMI
+
+Interpretation of Coefficients:
+Intercept (9377.79): The estimated baseline femoral neck bone density when BMI is zero. However, this value might not have a meaningful interpretation in the context of BMI and bone density.
+BMPBMI (3.86): The estimated change in femoral neck bone density for a one-unit increase in BMI. The coefficient is statistically significant (p<0.05), indicating that there is evidence of a relationship.
+Residuals:
+Residuals represent the differences between the observed and predicted values of femoral neck bone density.
+The residual standard error is 27510, indicating the typical magnitude of these differences.
+Model Fit:
+R-squared: 0.00459
+Only about 0.46% of the variability in femoral neck bone density is explained by the model.
+F-statistic: 75.7 with a very low p-value
+The model is statistically significant, suggesting that at least one predictor variable (BMI) is related to femoral neck bone density.
+
+The correlation coefficient between BMI (Body Mass Index) and Femoral Neck Bone Density is approximately 0.06775. This positive correlation coefficient suggests a weak positive linear relationship between BMI and Femoral Neck Bone Density in the NHANES III dataset. The correlation is positive, indicating that as BMI increases, there is a tendency for Femoral Neck Bone Density to increase slightly. However, the strength of this relationship is relatively weak. It's important to note that correlation does not imply causation, and other factors may influence bone density.
+
+# Relationship between Age and bone health
+
+```{r}
+library(tidyverse)
+library(dplyr)
+
+cleaned_data <- read.csv("boneExam_cleaned2.csv", na.strings = c("NA", "NaN"))
+
+
+subset_data <- cleaned_data %>% 
+  select(HSAGEIR, BDPFNBMD)
+subset_data <- na.omit(subset_data)
+
+# Scatter plot of Age vs. Bone Density with regression line
+ggplot(subset_data, aes(x = HSAGEIR, y = BDPFNBMD)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "green") +
+  labs(title = "Scatter Plot of Age vs. Femoral Neck Bone Density",
+       x = "Age",
+       y = "Femoral Neck Bone Density")
+
+
+# Correlation
+age_correlation <- cor(subset_data$HSAGEIR, subset_data$BDPFNBMD)
+age_model <- lm(BDPFNBMD ~ HSAGEIR, data = subset_data)
+cat("Correlation between Age and Femoral Neck Bone Density:", age_correlation, "\n\n")
+summary(age_model)
+
+```
+Linear Regression Analysis:
+
+The linear regression model is given by:
+Femoral Neck Bone Density=10660.72−22.37×Age
+
+Interpretation of Coefficients:
+Intercept (10660.72): Represents the estimated baseline femoral neck bone density when age is zero. However, this value might not have a practical interpretation in the context of age and bone density.
+Age (-22.37): Represents the estimated change in femoral neck bone density for a one-unit increase in age. The negative coefficient is consistent with the negative correlation. However, the coefficient is relatively small and marginally significant (p=0.0451).
+Residuals:
+Residuals represent the differences between the observed and predicted values of femoral neck bone density.
+Model Fit:
+R-squared: The proportion of the variability in femoral neck bone density explained by the model is extremely low (0.0002446), consistent with the weak correlation and small coefficient for Age.
+F-statistic: 4.016
+The model is marginally statistically significant, suggesting that age may have a weak association with femoral neck bone density.
+
+The correlation between Age and Femoral Neck Bone Density is approximately -0.01564. This correlation coefficient suggests a very weak negative linear relationship between age and femoral neck bone density in the NHANES III dataset. The negative sign indicates that, on average, as age increases, there is a slight tendency for femoral neck bone density to decrease, although the correlation is minimal.
+
+
+# Relationship between Ethnicity and bone health
+
+```{r}
+library(dplyr)
+
+
+cleaned_data <- read.csv("boneExam_cleaned2.csv", na.strings = c("NA", "NaN"))
+
+subset_data <- cleaned_data %>% 
+  select(DMARETHN, BDPFNBMD)
+subset_data <- na.omit(subset_data)
+
+# Bar chart of Ethnicity vs. Bone Density
+ggplot(subset_data, aes(x = factor(DMARETHN), y = BDPFNBMD, fill = factor(DMARETHN))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Bar Chart of Ethnicity vs. Femoral Neck Bone Density",
+       x = "Ethnicity",
+       y = "Femoral Neck Bone Density") +
+  scale_x_discrete(labels = c("Mexican American", "Other Hispanic", "Non-Hispanic White", "Non-Hispanic Black", "Other")) +
+  scale_fill_discrete(name = "Ethnicity")
+
+plot_data <- subset_data[, c("DMARETHN", "BDPFNBMD")]
+summary_stats <- plot_data %>%
+  group_by(DMARETHN) %>%
+  summarise(mean_bone_density = mean(BDPFNBMD),
+            median_bone_density = median(BDPFNBMD),
+            sd_bone_density = sd(BDPFNBMD))
+print(summary_stats)
+
+```
+There are variations in the mean Femoral Neck Bone Density across different ethnicities.
+The highest mean is observed in Non-Hispanic White individuals, followed by Other Hispanic, Non-Hispanic Black, and Mexican American individuals.The median Femoral Neck Bone Density also shows variations among ethnicities. Other Hispanic individuals have the highest median, while Mexican American individuals have the lowest.Non-Hispanic White individuals tend to have higher mean bone density, while Other Hispanic individuals have the highest median. Variability in bone density is also observed, with higher standard deviations indicating a wider range of values within Non-Hispanic White and Other Hispanic groups.
+
+
+# Relationship between Ethnicity and bone health
+
+```{r}
+library(dplyr)
+
+cleaned_data <- read.csv("boneExam_cleaned2.csv", na.strings = c("NA", "NaN"))
+
+subset_data <- cleaned_data %>% 
+  select(HSSEX, BDPFNBMD)
+subset_data <- na.omit(subset_data)
+
+# Bar chart of Gender vs. Bone Density
+ggplot(subset_data, aes(x = factor(HSSEX), y = BDPFNBMD, fill = factor(HSSEX))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Bar Chart of Gender vs. Femoral Neck Bone Density",
+       x = "Gender",
+       y = "Femoral Neck Bone Density") +
+  scale_x_discrete(labels = c("Male", "Female")) +
+  scale_fill_discrete(name = "Gender")
+
+#
+plot_data <- subset_data[, c("HSSEX", "BDPFNBMD")]
+summary_stats <- plot_data %>%
+  group_by(HSSEX) %>%
+  summarise(mean_bone_density = mean(BDPFNBMD),
+            median_bone_density = median(BDPFNBMD),
+            sd_bone_density = sd(BDPFNBMD))
+print(summary_stats)
+
+
+```
+Females, on average, have a higher mean Femoral Neck Bone Density compared to males. The median (middle) Femoral Neck Bone Density is slightly higher for males than for females. This suggests that there might be some skewness or outliers in the distribution. Females have a higher standard deviation, indicating greater variability in Femoral Neck Bone Density among females compared to males which indicates a wider range of Femoral Neck Bone Density values among females. 
+
+## Conclusion
+
+In conclusion, this analysis explored correlations between Femoral Neck Bone Density and key factors, revealing a modest positive association with BMI and a weak negative association with age. Ethnicity played a significant role, with notable variations across Mexican American, Other Hispanic, Non-Hispanic White, and Non-Hispanic Black groups. Females exhibited higher bone density compared to males, but with greater variability. While providing valuable insights, it's important to acknowledge that correlation does not imply causation. The project's focus on specific variables suggests the need for broader investigations, including factors like physical activity and dietary habits. These findings contribute to understanding bone health patterns and underscore the complexity of the interplay between demographic variables and Femoral Neck Bone Density. Further research is recommended to unravel additional determinants and enhance our comprehension of bone health dynamics.
