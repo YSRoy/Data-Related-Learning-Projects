@@ -1,0 +1,177 @@
+---
+title: "DSCI 6607 --  Fall 2023"
+author: Assignment 3^[This content is protected and may not be shared, uploaded, or
+  distributed without written permission from Dr. Armin Hatefi.]
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r, include=FALSE}
+library(tidyverse)
+```
+
+***
+
+## Question 1 
+
+Consider the movies data set (the same data studied in class). ${\bf [20~ points]}$
+
+1. Find movies produced by either US or India after 2007. 
+
+2. Compute the mean gross revenue in million dollars fro the each genre. Then 
+print the mean gross values in descending orders. 
+
+```{r}
+url <- "https://raw.githubusercontent.com/Juanets/movie-stats/master/movies.csv"
+movies <- read_csv(url)
+
+
+filtered_movies <- movies %>% filter((country == "USA" | country == "India") & year > 2007)
+
+
+genre_means <- movies %>%
+  filter(year > 2007) %>%
+  group_by(genre) %>%
+  summarize(mean_gross = mean(gross / 1e6, na.rm = TRUE))
+
+print(genre_means %>% arrange(desc(mean_gross)))
+```
+
+
+***
+
+## Question 2 
+
+Let $X_i \sim N(\mu, \sigma^2), i=1,\ldots,10$, where $\mu$ and $\sigma^2$ denote mean and variance of the population, respectively.  ${\bf [20~ points]}$
+
+1. Find mathematically the distribution of statistic $\sum_{i=1}^{10} X_i$.
+Show all your mathematical work and explain them. 
+
+2.  We would like to test the finding of part (1) numerically. To do that first generate a sample of size 10 from the Normal distribution with parameters $\mu=23$ and $\sigma^2=3.6$ and the compute the sum of the generated observations. 
+
+3. Simulate 10000 times part (2) and compute the sum of the generated samples of size 10. 
+
+4. Plot the histogram of the 10000 observed statistics from part (3). Then show the density curve of the theoretical distribution you found in part (1) on the histogram. 
+5. Explain your findings. 
+
+![Example Image](a3q2.jpg)
+
+```{r}
+
+
+set.seed(123)
+sample_data <- rnorm(10, mean = 23, sd = sqrt(3.6))
+sum_sample <- sum(sample_data)
+
+
+simulated_sums <- replicate(10000, sum(rnorm(10, mean = 23, sd = sqrt(3.6))))
+
+
+hist(simulated_sums, probability = TRUE, col = "lightblue", main = "Simulated Distribution vs Theoretical Distribution")
+curve(dnorm(x, mean = 10 * 23, sd = sqrt(10 * 3.6)), add = TRUE, col = "darkred", lwd = 2)
+```
+
+
+
+***
+
+## Question 3
+
+1. Consider the `python` list
+
+$$
+x = [3, 8,13, 18, 108, 21, 23, 17, 11]
+$$
+
+Write a `python` function where takes the list and uses only list comprehension and returns the odd values smaller than 23.  
+${\bf [20~ points]}$
+
+```{python}
+def get_odd_values_below_23(input_list):
+    return [x for x in input_list if x % 2 != 0 and x < 23]
+
+
+x = [3, 8, 13, 18, 108, 21, 23, 17, 11]
+result = get_odd_values_below_23(x)
+print(result)
+
+```
+
+
+***
+
+## Question 4
+
+Similar to Question 1, consider again the movies data set. For crime movies produced between 1990 to 2010, compute the budget mean, score mean, the total  number of the movies whose score value is available and the number of movies whose budget information is not missing. Report the above statistics for countries where the number of movies with budget information is greater than 2. Finally report your results for top 5 countries in descending order.   ${\bf [20~ points]}$ 
+
+```{r}
+
+url <- "https://raw.githubusercontent.com/Juanets/movie-stats/master/movies.csv"
+movies <- read_csv(url)
+
+crime_movies <- movies %>%
+  filter(genre == "Crime" & year >= 1990 & year <= 2010)
+
+result <- crime_movies %>%
+  group_by(country) %>%
+  filter(n() > 2) %>%
+  summarize(
+    budget_mean = mean(budget, na.rm = TRUE),
+    score_mean = mean(score, na.rm = TRUE),
+    total_movies_with_score = sum(!is.na(score)),
+    movies_with_budget_info = sum(!is.na(budget))
+  ) %>%
+  arrange(desc(movies_with_budget_info)) %>%
+  head(5)
+
+print(result)
+
+```
+
+
+***
+
+## Question 5
+
+1. Import the cosmology data collected from Planck power spectra. ${\bf [20~ points]}$ 
+
+[Planck power spectra](https://www.cosmos.esa.int/web/planck)
+
+2. Clean the data and compute the mean TT measurements and Te measurements 
+for angular scales where Te is positive. 
+
+3. Use ggplot package and show the TT and Te curves with different colors on one graph where x-axis is $\ell$.  
+
+```{r}
+
+cosmology_data <- read.table("COM_PowerSpect_CMB-base-plikHM-TTTEEE-lowl-lowE-lensing-minimum-theory_R3.01.txt", header = TRUE)
+
+
+cleaned_data <- cosmology_data %>%
+  filter(Te > 0) %>%
+  summarize(
+    mean_TT = mean(TT),
+    mean_Te = mean(Te)
+  )
+
+
+library(ggplot2)
+
+ggplot(cosmology_data, aes(x = L)) +
+  geom_line(aes(y = TT, color = "TT")) +
+  geom_line(aes(y = Te, color = "Te")) +
+  labs(title = "TT and Te Curves",
+       x = "L",
+       y = "Measurement") +
+  theme_minimal()
+
+```
+
+
+***
+
+**Due on Tuesday, November 14, by 5 pm**
+
+**Have fun!**

@@ -1,0 +1,358 @@
+---
+title: "DSCI 6607 --  Fall 2023"
+author: Assignment 4^[This content is protected and may not be shared, uploaded, or
+  distributed without written permission from Dr. Armin Hatefi.]
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r, include=FALSE}
+library(tidyverse)
+```
+
+## Question 1
+
+Load the `movies.csv` from your directory.
+
+```{r eval=FALSE}
+head(movies)
+```
+
+1.	Select the top three genres based on the mean scores. 
+
+2. Study the relationship between the budget and profit the movies from the top
+three genres obtained from part (1). 
+
+3. Ensure that the plot uses facetting method based on the top three genres and 
+includes smooth regression lines for each genre. 
+
+4. Interpretation the plots and discuss the relationships and  any abnormality, if there is.  
+${\bf [20~ points]}$
+
+```{r}
+
+movies <- read.csv("movies.csv")
+
+
+if (!"profit" %in% colnames(movies)) {
+  
+  movies$profit <- movies$gross - movies$budget
+}
+
+movies <- movies[complete.cases(movies[c("budget", "profit")]), ]
+
+# 1
+top_genres <- names(sort(tapply(movies$score, movies$genre, mean), decreasing = TRUE)[1:3])
+
+# 2
+library(ggplot2)
+ggplot(movies[movies$genre %in% top_genres, ], aes(x = budget, y = profit, color = genre)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_wrap(~ genre, scales = "free") +
+  labs(title = "Relationship between Budget and Profit for Top Three Genres")
+
+# 4. Interpret the plots and discuss the relationships and any abnormality
+# Include your observations and interpretations here
+
+
+
+```
+![Q1 P4](imgq1.png)
+
+
+***
+## Question 2
+
+Load the `ggplot2` and `fueleconomy` packages, as well as the `vehicles` dataset. Run the code below to extract just the first 1,000 rows of the dataset.
+
+```{r, eval=FALSE}
+library(ggplot2)
+library(fueleconomy)
+data(vehicles)
+vehicles <- vehicles[1:1000, ]
+```
+
+1. Make a scatterplot of `hwy` vs. `cty`. Give axis titles and a main title to the plot to make it more interpretable.
+
+2. Modify the plot above such that the color of the dot represents `cyl` value. Also reduce the alpha of the points to an appropriate level and introduce jitter.
+
+3. Modify the plot above so that each value of `cyl` is in its own plot.
+
+4. Make a barplot to show how many cars of each type of `fuel` there are in the dataset. (Use the `geom_bar` geom.) Change the theme to `ggplot`’s black and white theme.
+
+5. Make a violin plot to show the distribution of `displ` for each value of `drive`. Overlay that with a scatterplot of `displ` vs. `drive` (with jitter and alpha). How does the scatterplot give the reader more information?
+
+6. Make a (jittered) scatterplot of `hwy` against `year` with alpha value 0.5. Add a `geom_smooth` layer with option `method = "lm"` and without the SE bands.
+
+7. Modify the previous plot so that the color of the points depends on `fuel`. Also, change the theme to ggplot’s minimal theme and move the legend to the bottom of the plot. 
+
+8. Make a (jittered) scatterplot of `hwy` vs. `cty`, with the color of the point depending on `year`. Change the color scale to “Spectral”. Do you see a trend?
+
+9. Modify the theme of the plot above to a theme you like and try a different color scale. Also, give the plot a title and make it bigger, bold and centralized.
+${\bf [20~ points]}$
+
+```{r}
+
+# Load necessary packages and dataset
+library(ggplot2)
+library(fueleconomy)
+data(vehicles)
+vehicles <- vehicles[1:1000, ]
+
+# 1
+ggplot(vehicles, aes(x = hwy, y = cty)) +
+  geom_point() +
+  labs(title = "Highway vs. City Mileage", x = "Highway MPG", y = "City MPG")
+
+# 2
+ggplot(vehicles, aes(x = hwy, y = cty, color = factor(cyl))) +
+  geom_point(position = position_jitter(width = 0.2, height = 0.2), alpha = 0.5) +
+  labs(title = "Highway vs. City Mileage by Cylinder", x = "Highway MPG", y = "City MPG")
+
+# 3
+ggplot(vehicles, aes(x = hwy, y = cty)) +
+  geom_point(position = position_jitter(width = 0.2, height = 0.2), alpha = 0.5) +
+  facet_wrap(~cyl) +
+  labs(title = "Highway vs. City Mileage by Cylinder", x = "Highway MPG", y = "City MPG")
+
+# 4
+ggplot(vehicles, aes(x = fuel)) +
+  geom_bar() +
+  theme_bw() +
+  labs(title = "Count of Cars by Fuel Type", x = "Fuel Type", y = "Count")
+
+
+# 5
+ggplot(vehicles, aes(x = drive, y = displ)) +
+  geom_violin() +
+  geom_jitter(alpha = 0.5) +
+  labs(title = "Distribution of Engine Displacement by Drive Type", x = "Drive Type", y = "Engine Displacement")
+
+# 6
+ggplot(vehicles, aes(x = year, y = hwy)) +
+  geom_jitter(alpha = 0.5) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Highway Mileage over Time", x = "Year", y = "Highway MPG")
+
+# 7
+ggplot(vehicles, aes(x = year, y = hwy, color = fuel)) +
+  geom_jitter(alpha = 0.5) +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  labs(title = "Highway Mileage over Time by Fuel Type", x = "Year", y = "Highway MPG")
+
+
+# 8
+ggplot(vehicles, aes(x = hwy, y = cty, fill = as.factor(year))) +
+  geom_point(shape = 21, color = "black", size = 3) +  # Set color and size of points
+  scale_fill_manual(values = rainbow(length(unique(vehicles$year)))) +  # Set color scale
+  labs(title = "Highway vs. City Mileage", x = "Highway MPG", y = "City MPG")
+
+
+# 9
+ggplot(vehicles, aes(x = hwy, y = cty, color = as.factor(year))) +
+  geom_point() +
+  scale_color_manual(values = rainbow(length(unique(vehicles$year)))) +  # Set color scale
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5)
+  ) +
+  labs(title = "Mileage Comparison", x = "Highway MPG", y = "City MPG")
+
+
+```
+
+
+***
+## Question 3
+
+Download the following data:
+
+```{r, eval=FALSE}
+download.file("https://raw.githubusercontent.com/biocorecrg/CRG_RIntroduction/master/ex12_normalized_intensities.csv", "ex12_normalized_intensities.csv", method="curl")
+```
+
+1.	Read file into object `intenseData`. 
+
+2. Using ggplot, create a simple scatter plot representing gene expression of 
+`sampleB` on the x-axis and ``sampleH` on the y-axis.
+
+3. Add a column to the data frame `intenseData` (call this column `expr_limits`),
+that will be filled the following way: if the expression of a gene is > 13 in both 
+sampleB and sampleH, set to the value in `expr_limits` to `high` if the expression
+of a gene is < 6 in both sampleB and sampleH, set it to `low` if different, set it to `normal`. 
+
+4. Color the points of the scatter plot according to the newly created column `expr_limits`.
+Save that plot in the object `p`.
+
+5. Add a layer to `p` in order to change the points colors to blue (for low), 
+grey (for normal) and red (for high). Save this plot in the object `p2`. 
+
+6. Save p2 in a pdf file.
+${\bf [20~ points]}$
+
+```{r}
+# 1
+url <- "https://raw.githubusercontent.com/biocorecrg/CRG_RIntroduction/master/ex12_normalized_intensities.csv"
+data <- read.table(url, header = TRUE, sep = ",")
+
+# 2
+library(ggplot2)
+scatter_plot <- ggplot(data, aes(x = sampleB, y = sampleH)) +
+  geom_point() +
+  labs(title = "Scatter Plot of Gene Expression",
+       x = "Gene Expression in SampleB",
+       y = "Gene Expression in SampleH")
+
+# 3
+data$expr_limits <- with(data, ifelse((sampleB > 13 & sampleH > 13), "high",
+                                      ifelse((sampleB < 6 & sampleH < 6), "low", "normal")))
+
+# 4
+scatter_plot_colored <- ggplot(data, aes(x = sampleB, y = sampleH, color = expr_limits)) +
+  geom_point() +
+  labs(title = "Scatter Plot of Gene Expression with Color",
+       x = "Gene Expression in SampleB",
+       y = "Gene Expression in SampleH")
+
+# 5
+scatter_plot_colored_final <- scatter_plot_colored + scale_color_manual(values = c("low" = "blue", "normal" = "grey", "high" = "red"))
+
+# 6
+ggsave("scatter_plot_gene_expression.pdf", plot = scatter_plot_colored_final)
+
+
+```
+
+
+***
+## Question 4
+
+Load the life expectancy dataset:
+
+```{r eval=FALSE}
+head(gapminder)
+```
+
+1. Filter the data for the Americas in 2007, deselect all other variables.
+
+2. Create the variable `gdp`, defined as the product of population size and gdp per person.
+
+3. Identify the observation with lowest gdp per person.
+
+4. Identify all observations with above average life expectancy, stratified for each continent.
+
+5. Count the observations identified in the last step.
+
+6. Compute the mean life expectancy (the grand mean; i.e., across all observations).
+
+7. Compute the mean life expectancy for each year.
+${\bf [20~ points]}$
+
+```{r}
+gapminder <- read.csv("gapminder.csv")
+
+
+
+# 1
+americas_2007 <- gapminder %>%
+  filter(continent == "Americas", year == 2007) %>%
+  select(country, lifeExp, gdpPercap)
+
+
+print(americas_2007)
+
+# 2
+americas_2007 <- americas_2007 %>%
+  mutate(gdp = lifeExp * gdpPercap)
+
+
+print(americas_2007)
+
+# 3
+lowest_gdp_obs <- americas_2007[which.min(americas_2007$gdpPercap), ]
+
+
+print(lowest_gdp_obs)
+
+# 4.
+above_avg_life_expectancy <- gapminder %>%
+  group_by(continent) %>%
+  filter(lifeExp > mean(lifeExp))
+
+
+print(above_avg_life_expectancy)
+
+# 5
+count_above_avg_life_expectancy <- above_avg_life_expectancy %>%
+  summarise(count = n())
+
+
+print(count_above_avg_life_expectancy)
+
+# 6
+mean_life_expectancy <- mean(gapminder$lifeExp)
+
+
+print(mean_life_expectancy)
+
+# 7
+mean_life_expectancy_by_year <- gapminder %>%
+  group_by(year) %>%
+  summarise(mean_lifeExp = mean(lifeExp))
+
+
+print(mean_life_expectancy_by_year)
+
+
+
+```
+
+
+***
+## Question 5
+
+Load the `CAR.csv` data from your directory. 
+
+1. Compare the means and standard deviations of the number of miles per gallon/city
+of cars by origin (1 = USA; 2 = Europe; 3 = Asia) according to the data of file CAR.
+
+2. Compute the coefficient of variation of the turn diameter of US, Europe and Asia made cars. 
+
+${\bf [20~ points]}$
+
+
+```{r}
+
+library(dplyr)
+car_data <- read.csv('CAR.csv')
+
+# 1
+mpg_stats <- car_data %>%
+  group_by(origin) %>%
+  summarise(mean_mpg = mean(mpg), sd_mpg = sd(mpg))
+
+print(mpg_stats)
+
+# 2
+turn_diameter_stats <- car_data %>%
+  group_by(origin) %>%
+  summarise(cv_turn = sd(turn, na.rm = TRUE) / mean(turn, na.rm = TRUE))
+
+
+print(turn_diameter_stats)
+
+
+```
+
+
+***
+
+**Due on Monday, December 4, by 5 pm**
+
+**Have fun!**

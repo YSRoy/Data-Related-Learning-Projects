@@ -1,0 +1,278 @@
+---
+title: "Assignment1"
+output: html_document
+date: "2023-10-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+
+# Q1
+
+library(datasets)
+
+
+
+cumulative_sample_means_plot <- function(x) {
+  n <- length(x)
+  cumulative_means <- cumsum(x) / (1:n)
+  population_mean <- mean(x)
+  
+  plot(1:n, cumulative_means, type = 'l', col = 'green', xlab = 'Sample Size (n)', ylab = 'Cumulative Sample Mean',
+       main = 'Cumulative Sample Means vs. Sample Size')
+  
+  abline(h = population_mean, col = 'red', lty = 2, lwd = 2)
+  legend('topright', legend = c('Cumulative Sample Mean', 'Population Mean'),
+         col = c('green', 'red'), lty = c(1, 2), lwd = c(1, 2))
+}
+
+
+set.seed(123)  
+n <- 1000
+sample_data <- sample(rivers, size = n, replace = TRUE)
+cumulative_sample_means_plot(sample_data)
+
+
+
+```
+
+```{r}
+#Q2
+
+
+library(datasets)
+data(airquality)
+head(airquality)
+
+
+response_variable <- airquality$Ozone
+explanatory_variables <- airquality[, c("Solar.R", "Wind", "Temp")]
+complete_cases <- complete.cases(response_variable, explanatory_variables)
+response_variable <- response_variable[complete_cases]
+explanatory_variables <- explanatory_variables[complete_cases, ]
+mean_response <- mean(response_variable)
+sd_response <- sd(response_variable)
+mean_explanatory <- colMeans(explanatory_variables)
+sd_explanatory <- apply(explanatory_variables, 2, sd)
+normalized_response <- (response_variable - mean_response) / sd_response
+normalized_explanatory <- scale(explanatory_variables)
+
+
+n <- nrow(normalized_explanatory)  
+p <- ncol(normalized_explanatory)  
+X <- cbind(1, normalized_explanatory)
+
+beta_hat <- solve(t(X) %*% X) %*% t(X) %*% normalized_response
+par(mfrow = c(2, 2))  
+
+# Response variable
+boxplot(normalized_response, main = "Box Plot of Normalized Ozone")
+
+# Explanatory variables
+for (i in 1:p) {
+  boxplot(normalized_explanatory[, i], main = paste("Box Plot of Normalized", colnames(normalized_explanatory)[i]))
+}
+
+par(mfrow = c(1, 1))
+
+```
+```{r}
+# Q3
+
+
+
+majors <- c("Mathematics", "Statistics", "Computer Science", "Management", "Physics", "Engineering")
+
+
+student.list <- data.frame(
+  major = sample(majors, 18, replace = TRUE),
+  midterm = sample(0:20, 18, replace = TRUE),
+  final = sample(0:50, 18, replace = TRUE)
+)
+
+print(student.list)
+
+max_midterm_grade <- max(student.list$midterm)
+max_final_grade <- max(student.list$final)
+students_highest_midterm <- student.list[student.list$midterm == max_midterm_grade, ]
+students_highest_final <- student.list[student.list$final == max_final_grade, ]
+students_highest_grades <- rbind(students_highest_midterm, students_highest_final)
+
+
+cat("Students with the highest midterm or final grade:\n")
+print(students_highest_grades)
+
+
+midterm_mean_high_final <- mean(student.list$midterm[student.list$final >= 30])
+cat("Midterm grade mean for students with a final grade >= 30:", midterm_mean_high_final, "\n")
+
+
+
+
+```
+```{r}
+# Q4
+
+
+rearrange_data <- function(data, x) {
+  if (!x %in% colnames(data)) {
+    stop("Does not exist.")
+  }
+  
+  data <- data[order(-data[[x]]), ]
+  return(data)
+}
+
+rearranged_student_list <- rearrange_data(student.list, 'final')
+print(rearranged_student_list)
+
+```
+```{r}
+# Q5
+
+
+library(datasets)
+calculate_data_features <- function(data) {
+  column_names <- colnames(data)
+  means_and_sds <- rbind(apply(data, 2, mean), apply(data, 2, sd))
+  
+ 
+  n <- nrow(data)
+  p <- ncol(data)
+  pooled_mean <- sum(rowSums(means_and_sds) * colSums(data)) / (n * p)
+  pooled_variance <- sum((n - 1) * apply(data, 2, var)) / (n - p)
+  
+  features <- list(
+    name = column_names,
+    measures = means_and_sds,
+    'pooled mean' = pooled_mean,
+    'pooled variance' = pooled_variance
+  )
+  
+  return(features)
+}
+
+data(cars)
+cars_features <- calculate_data_features(cars)
+print(cars_features)
+
+
+```
+```{r}
+# Q6
+
+
+library(datasets)
+data(airquality)
+
+set.seed(123)
+population <- airquality[sample(nrow(airquality), 100), ]
+num_folds <- 5
+
+
+cross_validation_regression <- function(data, x_cols, response_col, num_folds) {
+  rmse_values <- numeric(num_folds)
+  
+  for (i in 1:num_folds) {
+    fold_size <- nrow(data) / num_folds
+    test_indices <- ((i - 1) * fold_size + 1):(i * fold_size)
+    train_data <- data[-test_indices, ]
+    test_data <- data[test_indices, ]
+    
+    if (anyNA(train_data) || anyNA(test_data)) {
+      print("NA \n")
+      train_data <- na.omit(train_data)
+      test_data <- na.omit(test_data)
+    }
+    
+    X_train <- as.matrix(train_data[, x_cols])
+    y_train <- train_data[, response_col]
+    X_test <- as.matrix(test_data[, x_cols])
+    beta_hat <- solve(t(X_train) %*% X_train) %*% t(X_train) %*% y_train
+    y_pred <- X_test %*% beta_hat
+    rmse <- sqrt(mean((test_data[, response_col] - y_pred)^2))
+    rmse_values[i] <- rmse
+  }
+  
+  return(rmse_values)
+}
+
+
+x_cols <- c("Solar.R", "Wind", "Temp")
+response_col <- "Ozone"
+rmse_values <- cross_validation_regression(population, x_cols, response_col, num_folds)
+
+
+overall_rmse <- sqrt(mean(rmse_values^2))
+print(overall_rmse)
+
+ 
+
+```
+```{r}
+# Q7
+
+
+set.seed(123)
+n <- 6607
+letters_vector <- sample(letters, n, replace = TRUE)
+
+frequency_table <- table(letters_vector)
+print(frequency_table)
+
+odd_frequency_letters <- names(frequency_table[frequency_table %% 2 != 0])
+print(odd_frequency_letters)
+
+```
+```{r}
+# Q8
+
+
+set.seed(123)
+Y <- matrix(rnorm(36, mean = 10, sd = 3), nrow = 6, ncol = 6)
+print(Y)
+
+
+Y_inverse <- solve(Y)
+print(Y_inverse)
+
+
+identity_matrix <- Y %*% Y_inverse
+is_identity <- all.equal(identity_matrix, diag(6))
+print(is_identity)
+
+
+```
+```{r}
+# Q9
+
+
+numbers <- 1001:6601
+result <- numbers[numbers %% 7 == 0 & numbers %% 11 == 0 & numbers %% 5 != 0]
+print(result)
+
+
+```
+```{r}
+# 10
+
+
+p_head <- 0.73
+num_tosses <- 256
+
+toss_results <- sample(c("H", "T"), num_tosses, replace = TRUE, prob = c(p_head, 1 - p_head))
+num_heads <- sum(toss_results == "H")
+
+estimated_p_head <- num_heads / num_tosses
+
+# Print the results
+cat("Number of Heads:", num_heads, "\n")
+cat("Estimated probability of getting heads:", estimated_p_head, "\n")
+
+
+
+```
+
+

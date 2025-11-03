@@ -1,0 +1,178 @@
+---
+title: "DSCI 6607 --  Fall 2023"
+author: Assignment 5^[This content is protected and may not be shared, uploaded, or
+  distributed without written permission from Dr. Armin Hatefi.]
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r, include=FALSE}
+library(tidyverse)
+```
+
+## Question 1
+
+It is well-known that the writing style of J. D.  Salinger is highly self-conscious and vernacular. 
+
+The data set `Catcher_in_the_rye.txt` is a sample text randomly selected from Salinger' novel `The Catcher in the Rye`.  
+
+1. Write a python program which computes the number of times each word occurs in the sample text. The output should be reported as a list of tuples.  Each tuple shows two elements where the first one is the word (as a string) and the second element represents the number of times that word occurred. 
+${\bf [20~ points]}$
+
+```{python}
+from collections import Counter
+import re
+
+def count_words(filename):
+    try:
+        with open(filename, 'r', encoding='utf-8') as file:
+            text = file.read().lower()
+            words = re.findall(r'\b\w+\b', text)
+            word_counts = Counter(words)
+            return list(word_counts.items())
+    except FileNotFoundError:
+        print(f"Error: File '{filename}' not found.")
+        return None
+
+# Usage
+catcher_in_the_rye_counts = count_words('Cacher_in_the_rye.txt')
+
+if catcher_in_the_rye_counts is not None:
+    print(catcher_in_the_rye_counts)
+
+
+
+```
+
+
+***
+
+## Question 2
+
+Consider again the sample text `Catcher_in_the_rye.txt`.
+Write a python program which calculates the average word length from the text. 
+
+**Hint**: First, you have to remove the punctuation marks from text file. 
+${\bf [20~ points]}$
+
+```{python}
+
+import string
+
+def average_word_length(filename):
+    with open(filename, 'r', encoding='utf-8') as file:
+        text = file.read().lower()
+        text = text.translate(str.maketrans('', '', string.punctuation))
+        words = re.findall(r'\b\w+\b', text)
+        total_length = sum(len(word) for word in words)
+        average_length = total_length / len(words)
+        return average_length
+
+# Usage
+catcher_in_the_rye_avg_length = average_word_length('Cacher_in_the_rye.txt')
+print(catcher_in_the_rye_avg_length)
+
+
+```
+
+
+***
+
+## Question 3
+
+Consider `Occupation.txt` data set from your directory.
+
+1. Use python and import the data set.
+
+2. Write a python script which computes the median of the age variable for each occupation. 
+
+3. Write a python script which computes the male ratio per occupation and returns them  from the most to the least.
+
+4. For each occupation, calculate the $90\%$ interval for the mean age. 
+
+**Hint:** To report the $90\%$ interval of a data set, sort the data set and report the $2.5$ and $97.5$ percentiles of the data. 
+${\bf [20~ points]}$
+
+
+
+***
+
+## Question 4
+
+Consider the $\alpha$-trimmed standard deviation:
+
+\[
+S_\alpha = \left( \frac{1}{N_\alpha -1} \sum_{j=[n\alpha]+1}^{[n(1-\alpha)]} 
+(X_j - {\bar T}_\alpha) \right)^{1/2}
+\]
+
+where ${\bar T}_\alpha = \frac{1}{N_\alpha -1} \sum_{j=[n\alpha]+1}^{[n(1-\alpha)]} X_j$.
+
+1. Write a python function which takes a $x$ and $\alpha$ and returns the $S_\alpha$.
+
+2. Apply you function to the `age` variable in `Occupation.txt` data. 
+${\bf [20~ points]}$
+
+```{python}
+import numpy as np
+
+def alpha_trimmed_std(x, alpha):
+    n = len(x)
+    lower_index = int(np.ceil(n * alpha))
+    upper_index = int(np.floor(n * (1 - alpha)))
+
+    x_sorted = np.sort(x)
+    trimmed_data = x_sorted[lower_index:upper_index + 1]
+
+    mean_trimmed = np.mean(trimmed_data)
+    squared_diff = (trimmed_data - mean_trimmed)**2
+    s_alpha = np.sqrt(np.sum(squared_diff) / (upper_index - lower_index))
+
+    return s_alpha
+
+# Assuming you have loaded the 'age' variable from 'Occupation.txt'
+# Replace 'your_data' with the actual data from 'Occupation.txt'
+your_data = [30, 35, 40, 45, 50, 55, 60, 65, 70]
+
+# Set your desired alpha value (e.g., 0.1 for 10% trimming)
+alpha_value = 0.1
+
+# Apply the function to the 'age' variable
+result = alpha_trimmed_std(your_data, alpha_value)
+
+print(f"Alpha-trimmed standard deviation for 'age': {result}")
+
+```
+
+
+***
+
+## Question 5
+
+Consider the `tips` data set
+
+```{r, eval=FALSE }
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+tips_data = sns.load_dataset("tips")
+```
+
+Write a python script using seaborn library to show
+
+- A categorical scatter plot that represents the relationship between the `total_bill` and `tip` columns.
+-	Differentiate the points by the day of the week using different colors.
+- Use different marker styles for lunch (`Lunch`) and dinner (`Dinner`) times.
+- Ass labels for the x-axis, y-axis, and title.
+- Add a legend that clearly indicates the day of the week.
+
+${\bf [20~ points]}$
+
+
+
+***
+**Due on Monday, December 4th, by 5 pm**
+
+**Have fun!**
